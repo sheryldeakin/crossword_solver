@@ -39,5 +39,53 @@ class CrosswordGrid:
             return {(row["start_col"], y) for y in range(row["start_row"], row["end_row"] + 1)}
 
     def display(self):
+        """Full grid print with borders and fill percentage (replaces simple print)."""
+        horizontal_border = "+" + "---" * self.width + "+"
+        print(horizontal_border)
         for row in self.grid:
-            print(' '.join(row))
+            row_display = "".join(f"[{cell}]" if cell != "■" else " ■ " for cell in row)
+            print(f"|{row_display}|")
+        print(horizontal_border)
+
+    def detailed_print(self):
+        """Detailed display with borders and progress info."""
+        horizontal_border = "+" + "---" * self.width + "+"
+        print(horizontal_border)
+
+        print("Crossword Info")
+        print(f"Grid size: {self.height} rows × {self.width} columns")
+
+        if hasattr(self, 'table_name'):
+            print(f"Title: {self.table_name}")
+
+        percent_filled = self.calculate_completion_percentage_by_char()
+        print(f"Fill progress: {percent_filled:.0f}%")
+
+        print("\nGrid:")
+        for row in self.grid:
+            row_display = "".join(f"[{cell}]" if cell != "■" else " ■ " for cell in row)
+            print(f"|{row_display}|")
+        print(horizontal_border)
+
+    def calculate_completion_percentage_by_char(self):
+        """Returns % of non-black cells that are filled."""
+        fillable = (self.grid != "■").sum()
+        filled = ((self.grid != "■") & (self.grid != " ")).sum()
+        return (filled / fillable * 100) if fillable else 0
+    
+    @property
+    def across_clues(self):
+        return {
+            row["number"]: row["clue"]
+            for _, row in self.clue_df.iterrows()
+            if "Across" in row["number_direction"]
+        }
+
+    @property
+    def down_clues(self):
+        return {
+            row["number"]: row["clue"]
+            for _, row in self.clue_df.iterrows()
+            if "Down" in row["number_direction"]
+        }
+
