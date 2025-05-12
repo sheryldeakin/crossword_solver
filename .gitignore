@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# VS Code settings
+.vscode/
+
+# Jupyter notebooks (optional)
+.ipynb_checkpoints/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs and output
+*.log
+*.out
+*.tmp
+
+# Data
+*.xlsx
+*.csv
+*.json
+*.db
+*.sqlite3
+data/
+!data/*.md     # keep markdown readme files in /data
+
+# Model checkpoints / weights
+*.pt
+*.pth
+*.h5
+
+# Package builds
+build/
+dist/
+*.egg-info/
+
+# My PyTorch Lightning / Hugging Face cache (optional)
+lightning_logs/
+cache/
+.checkpoints/
+
+# Pytest cache
+.pytest_cache/
+
+# VS Code debug configs (optional)
+.vscode/launch.json
