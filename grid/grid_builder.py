@@ -32,11 +32,17 @@ class CrosswordGrid:
         else:
             raise ValueError(f"Invalid clue direction: {row}")
 
+    # def _get_coordinates(self, row):
+    #     if "Across" in row["number_direction"]:
+    #         return {(x, row["start_row"]) for x in range(row["start_col"], row["end_col"] + 1)}
+    #     else:
+    #         return {(row["start_col"], y) for y in range(row["start_row"], row["end_row"] + 1)}
     def _get_coordinates(self, row):
         if "Across" in row["number_direction"]:
-            return {(x, row["start_row"]) for x in range(row["start_col"], row["end_col"] + 1)}
+            return [(x, row["start_row"]) for x in range(row["start_col"], row["end_col"] + 1)]
         else:
-            return {(row["start_col"], y) for y in range(row["start_row"], row["end_row"] + 1)}
+            return [(row["start_col"], y) for y in range(row["start_row"], row["end_row"] + 1)]
+
 
     def display(self):
         """Full grid print with borders and fill percentage (replaces simple print)."""
@@ -73,6 +79,32 @@ class CrosswordGrid:
         filled = ((self.grid != "■") & (self.grid != " ")).sum()
         return (filled / fillable * 100) if fillable else 0
     
+    def place_word(self, number_direction: str, word: str):
+        """
+        Fill in the given word for the specified clue into the grid.
+
+        Args:
+            number_direction (str): Clue ID like "12-Across" or "5-Down"
+            word (str): The word to place
+
+        Raises:
+            ValueError: If the clue is not found or the word doesn't fit
+        """
+        row = self.clue_df[self.clue_df["number_direction"] == number_direction]
+        if row.empty:
+            raise ValueError(f"Clue '{number_direction}' not found in clue_df.")
+
+        coords = list(row.iloc[0]["coordinate_set"])
+        if len(coords) != len(word):
+            raise ValueError(f"Word length {len(word)} does not match number of coordinates {len(coords)}.")
+        
+        for (x, y), letter in zip(coords, word.upper()):
+            current = self.grid[y][x]
+            if current not in {" ", "■"} and current != letter:
+                raise ValueError(f"Conflict at ({x}, {y}): grid has '{current}', trying to write '{letter}'")
+            self.grid[y][x] = letter
+
+        
     @property
     def across_clues(self):
         return {
