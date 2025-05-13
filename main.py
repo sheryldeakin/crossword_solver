@@ -5,6 +5,9 @@ from gui.grid_visualizer import CrosswordVisualizer
 from grid.grid_builder import CrosswordGrid
 
 def start_solving(crossword, visualizer):
+    visualizer.start_time = time.time()
+    visualizer.elapsed_time = 0
+    visualizer.timer_running = True
     for clue in crossword.clue_df.itertuples():
         clue_id = clue.number_direction  # e.g. "12-Across"
         visualizer.highlight_clues([clue_id])  # 🔥 Highlight current clue
@@ -14,8 +17,9 @@ def start_solving(crossword, visualizer):
                 pygame.time.wait(10)  # Wait while paused
             visualizer.update_cell(y, x, "A")
             time.sleep(0.05)
-            
+
     visualizer.highlight_clues([]) 
+    
 
 def main():
     print("🧠 Welcome to the AI Crossword Solver.")

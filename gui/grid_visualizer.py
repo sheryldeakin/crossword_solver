@@ -1,3 +1,4 @@
+import time
 import pygame
 import sys
 
@@ -30,6 +31,11 @@ class CrosswordVisualizer:
             self.scroll_speed = 20
             self.paused = False
             self.active_clue_ids = set()  # e.g., {"12-Across", "5-Down"}
+
+            self.start_time = None
+            self.elapsed_time = 0
+            self.timer_running = False
+
 
 
     def _build_cell_to_number_map(self):
@@ -236,11 +242,26 @@ class CrosswordVisualizer:
 
         for _, row in self.crossword.clue_df.iterrows():
             coords = row["coordinate_set"]
-            if all(self.grid[y][x] != " " and self.grid[y][x] != "■" for (y, x) in coords):
+            if all(self.grid[row_][col_] not in {" ", "■"} for (col_, row_) in coords):
                 solved += 1
 
         clue_text = self.font.render(f"{solved} / {total} clues solved", True, (0, 0, 0))
         self.window.blit(clue_text, (PADDING, bar_y + bar_height + 10))
+
+        # ------------------------
+        # Timer Display
+        # ------------------------
+        if self.timer_running and self.start_time is not None:
+            current_elapsed = self.elapsed_time + (time.time() - self.start_time)
+        else:
+            current_elapsed = self.elapsed_time
+
+
+        minutes = int(current_elapsed // 60)
+        seconds = int(current_elapsed % 60)
+        timer_text = self.font.render(f"Time: {minutes:02}:{seconds:02}", True, (0, 0, 0))
+        self.window.blit(timer_text, (PADDING + 360, bar_y + bar_height + 10))
+
 
 
 
@@ -288,10 +309,14 @@ class CrosswordVisualizer:
         self.draw_control_panel()
         pygame.display.flip()
 
+
     def on_start(self):
     # Placeholder for now — override or assign externally
-        pass
 
+        pass
+    
+    def is_puzzle_filled(self):
+        return ((self.grid != "■") & (self.grid != " ")).sum() == (self.grid != "■").sum()
 
     def run(self):
         try:
@@ -299,17 +324,37 @@ class CrosswordVisualizer:
             self.draw_grid()
             while running:
                 for event in pygame.event.get():
+                    # Redraw every 250ms for timer updates
+                    if self.timer_running and not self.paused:
+                        now = pygame.time.get_ticks()
+                        if not hasattr(self, "_last_tick") or now - self._last_tick >= 250:
+                            self._last_tick = now
+                            self.draw_grid()
+
                     if event.type == pygame.QUIT:
                         running = False
                     elif event.type == pygame.MOUSEBUTTONDOWN:
-                        if event.button == 1:  # Left click
+                        if event.button == 1:
                             if hasattr(self, "quit_button_rect") and self.quit_button_rect.collidepoint(event.pos):
                                 running = False
                             elif hasattr(self, "start_button_rect") and self.start_button_rect.collidepoint(event.pos):
                                 print("▶️ Start button clicked!")
-                                self.on_start()  # call placeholder method
+                                self.start_time = time.time()
+                                self.elapsed_time = 0
+                                self.timer_running = True
+                                self.on_start()
                             elif hasattr(self, "pause_button_rect") and self.pause_button_rect.collidepoint(event.pos):
-                                self.paused = not getattr(self, "paused", False)
+                                if not self.paused:
+                                    # Pausing
+                                    self.paused = True
+                                    if self.timer_running and self.start_time is not None:
+                                        self.elapsed_time += time.time() - self.start_time
+                                        self.start_time = None
+                                else:
+                                    # Resuming
+                                    self.paused = False
+                                    if self.timer_running:
+                                        self.start_time = time.time()
                                 print("⏸️ Paused" if self.paused else "▶️ Resumed")
                                 self.draw_grid()
 
@@ -334,6 +379,11 @@ class CrosswordVisualizer:
 
 
     def update_cell(self, row, col, letter):
-        """Call this method to update the display during solving."""
         self.grid[row][col] = letter
         self.draw_grid()
+        if self.is_puzzle_filled():
+            if self.timer_running and self.start_time is not None:
+                self.elapsed_time += time.time() - self.start_time
+                self.start_time = None
+            self.timer_running = False
+
